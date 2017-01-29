@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>CellularAutomaton</title>
+</head>
+<body>
+    <div id="app">
+        <table>
+            <tr>
+                <td>rule:</td>
+                <td><input type="text" id="rule" value="110"/></td>
+            </tr>
+
+            <tr>
+                <td>lines:</td>
+                <td><input type="text" id="lines" value="600"/></td>
+            </tr>
+
+            <tr>
+                <td>cellSize:</td>
+                <td><input type="text" id="cellSize" value="1"/></td>
+            </tr>
+
+            <tr>
+                <td><button id="apply">apply</button></td>
+            </tr>
+        <table>
+    </div>
+    <canvas width='6000px' height='4000px' id='canvas' style='border: 1px solid gray;'/>
+    <script>
+        const ruleElement = document.getElementById('rule');
+        const linesElement = document.getElementById('lines');
+        const cellSizeElement = document.getElementById('cellSize');
+        const applyElement = document.getElementById('apply');
+
+        applyElement.onclick = app;
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        ctx.fillStyle = 'rgb(0, 0, 0)';
+
+        function app() {
+            const transitions = fullByteStrig((+ruleElement.value).toString(2));
+
+            const iterations = +linesElement.value;
+            const cellSize = +cellSizeElement.value;
+
+            function fullByteStrig(val) {
+                return `${Array(8 - val.length + 1).join('0')}${val}`;
+            }
+
+            class Cell {
+                constructor(x, y, value) {
+                    this.x = x;
+                    this.y = y;
+                    this.value = value;
+                }
+            }
+
+            class Line {
+                constructor(cells, rules) {
+                    this.cells = cells;
+                    this.rules = rules;
+                }
+
+                _getStringifiedState(positionFrom, to) {
+                    return this.cells.slice(positionFrom, to).reduce((state, cell) => `${state}${cell.value}`, '');
+                }
+
+                getNewLine() {
+                    const newListOfCells = [new Cell(this.cells[0].x - 1, this.cells[0].y + 1, 0)];
+
+                    for (let i = 0; i < this.cells.length; i++) {
+                        if (i > 0) {
+                            if (i + 1 < this.cells.length) {
+                                const rule = this._getStringifiedState(i - 1, i + 2);
+                                newListOfCells.push(new Cell(
+                                    this.cells[i].x,
+                                    this.cells[i].y + 1,
+                                    this.rules[rule]
+                                ));
+                            } else {
+                                const rule = `${this.cells[this.cells.length - 1].value}00`;
+                                newListOfCells.push(new Cell(
+                                    this.cells[i].x,
+                                    this.cells[i].y + 1,
+                                    this.rules[rule]
+                                ));
+                            }
+                        } else {
+                            const rule = `00${this.cells[0].value}`;
+                            newListOfCells.push(new Cell(
+                                this.cells[i].x,
+                                this.cells[i].y + 1,
+                                this.rules[rule]
+                            ));
+                        }
+                    }
+
+                    newListOfCells.push(new Cell(newListOfCells[newListOfCells.length - 1].x + 1, newListOfCells[newListOfCells.length - 1].y, 0));
+
+                    return newListOfCells;
+                }
+
+                getCells() {
+                    return this.cells;
+                }
+            }
+
+            class CellularAutomaton {
+                constructor(transitions, initialCells) {
+                    this.rules = {
+                        '111': +transitions[0],
+                        '110': +transitions[1],
+                        '101': +transitions[2],
+                        '100': +transitions[3],
+                        '011': +transitions[4],
+                        '010': +transitions[5],
+                        '001': +transitions[6],
+                        '000': +transitions[7]
+                    };
+
+                    this.lines = [
+                        new Line(initialCells, this.rules)
+                    ];
+                }
+
+                generate(iterations) {
+                    for (let i = 1; i <= iterations; i++) {
+                        const newListOfCells = this.lines[i - 1].getNewLine();
+
+                        this.lines.push(new Line(newListOfCells, this.lines[i - 1].rules));
+                    }
+                }
+
+                getCells() {
+                    return this.lines.reduce((arr, line) => arr.concat(line.getCells()), []);
+                }
+            }
+
+            const initialCells = [
+                new Cell(879, 5, 0),
+                new Cell(880, 5, 1),
+                new Cell(881, 5, 0)
+            ];
+
+            const grid = new CellularAutomaton(transitions, initialCells);
+
+            grid.generate(iterations);
+
+            const cells = grid.getCells();
+
+            function drawCells(cells) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                cells.forEach(cell => {
+                    if (cell.value === 1) {
+                        ctx.fillRect( cell.x * cellSize, cell.y * cellSize, cellSize, cellSize );
+                    }
+                });
+            }
+
+            drawCells(cells);
+        }
+    </script>
+</body>
+</html>
