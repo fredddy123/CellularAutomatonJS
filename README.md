@@ -14,3 +14,6 @@ rule 30:
 
 rule 150:
 ![alt text](http://i.piccy.info/i9/54561d1ce04c6df203fb5de134229cf2/1485720650/24179/1113474/Screenshot_from_2017_01_29_22_03_12.png)
+
+rule 73:
+![alt text](http://i.piccy.info/i9/e729d941b2ab48b4e28019787ba4f591/1485721342/75488/1113474/Screenshot_from_2017_01_29_22_22_05.png)
